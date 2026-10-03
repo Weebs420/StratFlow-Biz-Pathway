@@ -33,18 +33,25 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -83,7 +90,7 @@ import com.example.ui.theme.Slate850
 import com.example.ui.theme.Slate900
 import com.example.ui.theme.Slate950
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun BuilderScreen(
     viewModel: StratFlowViewModel,
@@ -95,12 +102,14 @@ fun BuilderScreen(
     val targetDemography by viewModel.targetDemography.collectAsStateWithLifecycle()
     val targetGender by viewModel.targetGender.collectAsStateWithLifecycle()
     val selectedTerms by viewModel.selectedTerms.collectAsStateWithLifecycle()
+    val selectedLens by viewModel.selectedArchetypeLens.collectAsStateWithLifecycle()
     val suggestionResult by viewModel.suggestionResult.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val isSuggesting by viewModel.isSuggesting.collectAsStateWithLifecycle()
 
     var selectedLayerTab by remember { mutableStateOf<FrameworkLayer?>(null) }
     var filterFilterMode by remember { mutableStateOf("ALL") } // ALL, EXECUTIVE_11, BIG_4
+    var archetypeMenuExpanded by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
 
@@ -149,7 +158,7 @@ fun BuilderScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "3-Layer Framework & Risk Mitigation Engine",
+                                text = "5-Layer Framework & Risk Mitigation Engine",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Slate400
                             )
@@ -313,6 +322,48 @@ fun BuilderScreen(
                         }
                     }
 
+                    // ৳25 Lakh Practical Default Quick Action
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(AmberGold.copy(alpha = 0.12f))
+                            .border(1.dp, AmberGold.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                            .clickable {
+                                viewModel.onCapitalChanged("৳25 Lakh")
+                                viewModel.setTerms(listOf("Original", "Customer-first", "Hybrid", "Shadow", "Flywheel"))
+                            }
+                            .padding(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "৳25 Lakh Practical Default Blueprint:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AmberGold
+                                )
+                                Text(
+                                    text = "Original + Customer-first + Hybrid + Shadow + Flywheel",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Text(
+                                text = "Apply →",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AmberGold
+                            )
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
@@ -411,10 +462,10 @@ fun BuilderScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // SECTION 3: 3-LAYER STRATEGY TERMS & ARCHETYPES
+            // SECTION 3: 5-LAYER STRATEGY TERMS & ARCHETYPES
             SectionHeader(
                 title = "3. Select Strategy Terms & Archetypes",
-                subtitle = "Layer 1: Archetype → Layer 2: Expansion → Layer 3: Compounding",
+                subtitle = "Archetype → Starting Point → Expansion → Operating Design → Compounding",
                 icon = Icons.Default.Lightbulb,
                 badgeText = "${selectedTerms.size} Active"
             )
@@ -427,6 +478,133 @@ fun BuilderScreen(
                     .border(1.dp, Slate800, RoundedCornerShape(14.dp))
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
+
+                    // STRATEGIC LENS DROPDOWN & OPPOSITE INVERSION TOOLBAR
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Slate850),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                width = 1.dp,
+                                color = if (selectedLens == "Opposite") CyanAccent else AmberGold.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Strategy Lens / Perspective:",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (selectedLens == "Opposite") CyanAccent else AmberGold
+                                    )
+                                    Text(
+                                        text = if (selectedLens == "Opposite") "🔄 Opposite Model Active: Sequence Inverted!" else "Select Framework Lens or Invert Logic",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { viewModel.invertToOppositeOrOriginal() },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (selectedLens == "Opposite") CyanAccent else AmberGold,
+                                        contentColor = Slate950
+                                    ),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier
+                                        .height(34.dp)
+                                        .testTag("button_invert_framework")
+                                ) {
+                                    Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (selectedLens == "Opposite") "⇄ Invert to Original" else "⇄ Invert to Opposite",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            ExposedDropdownMenuBox(
+                                expanded = archetypeMenuExpanded,
+                                onExpandedChange = { archetypeMenuExpanded = it },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                OutlinedTextField(
+                                    value = when (selectedLens) {
+                                        "Opposite" -> "Opposite Archetype (Capital → Asset → Capability → Distribution → Customer)"
+                                        "Hybrid" -> "Hybrid Archetype (Concurrent Cash & Asset Build)"
+                                        "Shadow" -> "Shadow Archetype (Frontline Visible Brand + Backstage Moat)"
+                                        else -> "Original Archetype (Customer → Demand → Capability → Asset)"
+                                    },
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = archetypeMenuExpanded) },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = if (selectedLens == "Opposite") CyanAccent else AmberGold,
+                                        unfocusedBorderColor = Slate700,
+                                        focusedContainerColor = Slate900,
+                                        unfocusedContainerColor = Slate900
+                                    ),
+                                    modifier = Modifier
+                                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+                                        .fillMaxWidth()
+                                        .testTag("dropdown_archetype_lens"),
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+
+                                ExposedDropdownMenu(
+                                    expanded = archetypeMenuExpanded,
+                                    onDismissRequest = { archetypeMenuExpanded = false },
+                                    modifier = Modifier.background(Slate900)
+                                ) {
+                                    listOf(
+                                        Triple("Original", "Original Archetype", "Customer → Demand → Capability → Asset. Sell first, prove demand, build assets later."),
+                                        Triple("Opposite", "Opposite Archetype (Inverted)", "Capital → Asset → Capability → Distribution → Customer. Build foundation/assets first, scale demand."),
+                                        Triple("Hybrid", "Hybrid Archetype", "Run cash generation and asset building concurrently. One track funds the other."),
+                                        Triple("Shadow", "Shadow Archetype", "Visible business earns revenue; hidden procurement/logistics creates the real moat.")
+                                    ).forEach { (key, label, desc) ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                                    Text(
+                                                        text = label,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (selectedLens == key) AmberGold else MaterialTheme.colorScheme.onSurface,
+                                                        fontSize = 13.sp
+                                                    )
+                                                    Text(
+                                                        text = desc,
+                                                        fontSize = 11.sp,
+                                                        color = Slate400,
+                                                        lineHeight = 15.sp
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                viewModel.setArchetypeLens(key, triggerRegeneration = false)
+                                                archetypeMenuExpanded = false
+                                            },
+                                            modifier = Modifier.testTag("dropdown_item_$key")
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
                     // Filter Mode Toggle: All vs Executive 11 vs Big 4
                     Row(
                         modifier = Modifier
@@ -480,7 +658,7 @@ fun BuilderScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Layer tabs
-                    val layers = FrameworkLayer.values().toList()
+                    val layers = FrameworkLayer.entries
                     ScrollableTabRow(
                         selectedTabIndex = if (selectedLayerTab == null) 0 else layers.indexOf(selectedLayerTab) + 1,
                         containerColor = Slate850,
@@ -716,6 +894,34 @@ fun BuilderScreen(
                                         }
                                     }
                                 }
+
+                                if (res.decisionChecklistAnswers.isNotEmpty()) {
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Slate700)
+                                    Text(
+                                        text = "5-Point Strategic Decision Checklist Evaluation:",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AmberGold
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    res.decisionChecklistAnswers.forEach { answer ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 3.dp),
+                                            verticalAlignment = Alignment.Top
+                                        ) {
+                                            Text("• ", color = AmberGold, fontWeight = FontWeight.Bold)
+                                            Text(
+                                                text = answer,
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                lineHeight = 17.sp
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -769,6 +975,33 @@ fun BuilderScreen(
                         modifier = Modifier.size(20.dp)
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // AI RISK MITIGATION ROADMAP SHORTCUT BUTTON
+            OutlinedButton(
+                onClick = { viewModel.loadCurrentBuilderIntoRiskRoadmap() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("button_open_risk_roadmap"),
+                border = androidx.compose.foundation.BorderStroke(1.2.dp, CyanAccent),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Shield,
+                    contentDescription = null,
+                    tint = CyanAccent,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Generate AI Risk Mitigation Roadmap (Gemini)",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = CyanAccent
+                )
             }
 
             Spacer(modifier = Modifier.height(30.dp))

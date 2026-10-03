@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -27,17 +28,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.screens.BlueprintDetailScreen
 import com.example.ui.screens.BuilderScreen
 import com.example.ui.screens.GlossaryScreen
+import com.example.ui.screens.RiskRoadmapScreen
 import com.example.ui.screens.SavedBlueprintsScreen
-import com.example.ui.theme.AmberGold
-import com.example.ui.theme.CyanAccent
-import com.example.ui.theme.Slate400
-import com.example.ui.theme.Slate850
-import com.example.ui.theme.Slate900
+import com.example.ui.theme.GoldWarm
+import com.example.ui.theme.TealDarkBg
+import com.example.ui.theme.TealPrimary
+import com.example.ui.theme.TextMuted
 
 data class NavItem(
     val tab: AppNavTab,
@@ -71,16 +74,17 @@ fun StratFlowApp(
 
     val navItems = listOf(
         NavItem(AppNavTab.BUILDER, Icons.Default.AutoAwesome, "Builder", "nav_builder"),
+        NavItem(AppNavTab.RISK_ROADMAP, Icons.Default.Shield, "Risk AI", "nav_risk_roadmap"),
         NavItem(AppNavTab.BLUEPRINT, Icons.Default.Layers, "Pathway", "nav_blueprint"),
         NavItem(AppNavTab.SAVED, Icons.Default.Bookmark, "Vault", "nav_saved"),
-        NavItem(AppNavTab.GLOSSARY, Icons.AutoMirrored.Filled.MenuBook, "Glossary", "nav_glossary")
+        NavItem(AppNavTab.GLOSSARY, Icons.AutoMirrored.Filled.MenuBook, "Terms", "nav_glossary")
     )
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             NavigationBar(
-                containerColor = Slate900,
+                containerColor = TealDarkBg,
                 modifier = Modifier.testTag("bottom_nav_bar")
             ) {
                 navItems.forEach { item ->
@@ -95,13 +99,13 @@ fun StratFlowApp(
                                 modifier = Modifier.size(20.dp)
                             )
                         },
-                        label = { Text(item.label) },
+                        label = { Text(item.label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium) },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = AmberGold,
-                            selectedTextColor = AmberGold,
-                            indicatorColor = Slate850,
-                            unselectedIconColor = Slate400,
-                            unselectedTextColor = Slate400
+                            selectedIconColor = GoldWarm,
+                            selectedTextColor = GoldWarm,
+                            indicatorColor = TealPrimary.copy(alpha = 0.25f),
+                            unselectedIconColor = TextMuted,
+                            unselectedTextColor = TextMuted
                         ),
                         modifier = Modifier.testTag(item.tag)
                     )
@@ -118,6 +122,7 @@ fun StratFlowApp(
         ) {
             when (navTab) {
                 AppNavTab.BUILDER -> BuilderScreen(viewModel = viewModel)
+                AppNavTab.RISK_ROADMAP -> RiskRoadmapScreen(viewModel = viewModel)
                 AppNavTab.BLUEPRINT -> BlueprintDetailScreen(viewModel = viewModel)
                 AppNavTab.SAVED -> SavedBlueprintsScreen(viewModel = viewModel)
                 AppNavTab.GLOSSARY -> GlossaryScreen(viewModel = viewModel)

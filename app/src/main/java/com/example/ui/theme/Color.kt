@@ -2,30 +2,61 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Dark luxury navy/slate strategy palette
-val Slate950 = Color(0xFF0A0F1D)
-val Slate900 = Color(0xFF0F172A)
-val Slate850 = Color(0xFF162036)
-val Slate800 = Color(0xFF1E293B)
-val Slate700 = Color(0xFF334155)
-val Slate600 = Color(0xFF475569)
-val Slate400 = Color(0xFF94A3B8)
-val Slate300 = Color(0xFFCBD5E1)
-val Slate100 = Color(0xFFF1F5F9)
+// ==========================================
+// USER SPECIFIED BRAND PALETTE
+// #318EA7: Primary Ocean Teal
+// #112A31: Deep Petroleum Dark Teal (Background)
+// #F2DB98: Soft Gold Cream / Sand Accent
+// #E6BB3F: Warm Rich Gold / Primary Action
+// ==========================================
 
-// Accent Colors
-val AmberGold = Color(0xFFF59E0B)
-val AmberGoldLight = Color(0xFFFDE68A)
-val CyanAccent = Color(0xFF06B6D4)
-val EmeraldSuccess = Color(0xFF10B981)
-val EmeraldBg = Color(0xFF064E3B)
-val RoseRisk = Color(0xFFF43F5E)
-val RoseBg = Color(0xFF4C0519)
-val PurpleFlywheel = Color(0xFF8B5CF6)
-val BlueInfo = Color(0xFF3B82F6)
+val TealPrimary = Color(0xFF318EA7)
+val TealDarkBg = Color(0xFF112A31)
+val GoldCream = Color(0xFFF2DB98)
+val GoldWarm = Color(0xFFE6BB3F)
+
+// Harmonious variations for minimal elevation & surfaces
+val TealCardSurface = Color(0xFF16353E)
+val TealSurfaceHigher = Color(0xFF1D424D)
+val TealSurfaceElevated = Color(0xFF234F5C)
+val TealBorder = Color(0xFF2B5865)
+val TealBorderSubtle = Color(0xFF1F434E)
+val TealLightAccent = Color(0xFF48A6BF)
+
+val GoldCreamSubtle = Color(0x26F2DB98) // 15% opacity
+val GoldWarmSubtle = Color(0x2EE6BB3F)  // 18% opacity
+val TealPrimarySubtle = Color(0x26318EA7) // 15% opacity
+
+// Text & Neutral Colors
+val TextPrimary = Color(0xFFF8FAFC)
+val TextSecondary = Color(0xFFCBD5E1)
+val TextMuted = Color(0xFF90A8B1)
+val TextGold = Color(0xFFF2DB98)
+
+// Compatibility Tokens mapped to the new palette for cohesive app-wide styling
+val Slate950 = Color(0xFF0C1E23)
+val Slate900 = TealDarkBg         // #112A31
+val Slate850 = TealCardSurface     // #16353E
+val Slate800 = TealSurfaceHigher   // #1D424D
+val Slate700 = TealBorder          // #2B5865
+val Slate600 = Color(0xFF3A6977)
+val Slate400 = TextMuted          // #90A8B1
+val Slate300 = TextSecondary      // #CBD5E1
+val Slate100 = TextPrimary        // #F8FAFC
+
+// Semantic Accents
+val AmberGold = GoldWarm           // #E6BB3F
+val AmberGoldLight = GoldCream     // #F2DB98
+val CyanAccent = TealPrimary       // #318EA7
+val EmeraldSuccess = Color(0xFF2DD4BF)
+val EmeraldBg = Color(0xFF0D332F)
+val RoseRisk = Color(0xFFFB7185)
+val RoseBg = Color(0xFF4C111E)
+val PurpleFlywheel = Color(0xFFA78BFA)
+val BlueInfo = Color(0xFF38BDF8)
 
 // Theme tokens
-val PrimaryGold = Color(0xFFEAB308)
-val OnPrimaryDark = Color(0xFF0F172A)
-val SecondaryCyan = Color(0xFF06B6D4)
-val TertiaryPurple = Color(0xFFA855F7)
+val PrimaryGold = GoldWarm         // #E6BB3F
+val OnPrimaryDark = TealDarkBg     // #112A31
+val SecondaryCyan = TealPrimary    // #318EA7
+val TertiaryPurple = GoldCream     // #F2DB98

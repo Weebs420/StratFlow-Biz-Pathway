@@ -246,7 +246,8 @@ Generate the complete strategic blueprint with deep, practical, non-generic advi
 """.trimIndent()
 
             val jsonOutput = GeminiClient.generateContent(systemPrompt, userPrompt) ?: return@withContext null
-            val blueprint = BlueprintJsonAdapter.fromJson(jsonOutput)
+            val cleanJsonStr = cleanJson(jsonOutput)
+            val blueprint = BlueprintJsonAdapter.fromJson(cleanJsonStr)
             blueprint.copy(
                 businessesInput = businesses,
                 startingCapital = capital,
@@ -260,6 +261,19 @@ Generate the complete strategic blueprint with deep, practical, non-generic advi
         }
     }
 
+    private fun cleanJson(raw: String): String {
+        var text = raw.trim()
+        if (text.startsWith("```json")) {
+            text = text.substring(7)
+        } else if (text.startsWith("```")) {
+            text = text.substring(3)
+        }
+        if (text.endsWith("```")) {
+            text = text.substring(0, text.length - 3)
+        }
+        return text.trim()
+    }
+
     private fun generateHeuristicBlueprint(
         businesses: List<String>,
         capital: String,
@@ -268,6 +282,10 @@ Generate the complete strategic blueprint with deep, practical, non-generic advi
         gender: String,
         selectedTerms: List<String>
     ): FrameworkBlueprint {
+        val isOppositeModel = selectedTerms.contains("Opposite")
+        val isHybridModel = selectedTerms.contains("Hybrid")
+        val isShadowModel = selectedTerms.contains("Shadow")
+
         val suggestion = suggestFramework(businesses, capital, context, demography, gender, selectedTerms)
         val formula = if (selectedTerms.isNotEmpty()) {
             selectedTerms.joinToString(" + ")
@@ -275,70 +293,176 @@ Generate the complete strategic blueprint with deep, practical, non-generic advi
             suggestion.recommendedFormula
         }
 
+        // Dynamically order execution stages based on archetype
+        val orderedBusinesses = if (isOppositeModel) {
+            // Opposite: Asset & Infrastructure first, wholesale second, retail customer scale last
+            businesses.sortedByDescending { name ->
+                val n = name.lowercase()
+                when {
+                    n.contains("storage") || n.contains("silo") || n.contains("facility") || n.contains("plant") || n.contains("asset") -> 3
+                    n.contains("hub") || n.contains("processing") || n.contains("sourcing") || n.contains("fleet") -> 2
+                    else -> 1
+                }
+            }
+        } else {
+            // Original: Customer demand & sales first, processing second, heavy assets later
+            businesses.sortedBy { name ->
+                val n = name.lowercase()
+                when {
+                    n.contains("staples") || n.contains("retail") || n.contains("branded") || n.contains("store") || n.contains("d2c") || n.contains("sale") -> 1
+                    n.contains("hub") || n.contains("aggregation") || n.contains("sourcing") -> 2
+                    else -> 3
+                }
+            }
+        }
+
         val steps = mutableListOf<PathwayStep>()
         val capLabel = if (capital.isBlank()) "Budget Reserve" else capital
         val ctxLabel = if (context.isBlank()) "Target Market" else context
 
-        businesses.forEachIndexed { index, bizName ->
+        orderedBusinesses.forEachIndexed { index, bizName ->
             val stepNum = index + 1
-            val assignedTerm = selectedTerms.getOrNull(index % selectedTerms.size)
-                ?: when (stepNum) {
+            val assignedTerm = when {
+                isOppositeModel -> when (stepNum) {
+                    1 -> "Asset-first"
+                    2 -> "Integrated"
+                    3 -> "Vertical"
+                    else -> "Flywheel"
+                }
+                else -> when (stepNum) {
                     1 -> "Customer-first"
                     2 -> "Hybrid"
                     3 -> "Shadow"
-                    4 -> "Vertical"
                     else -> "Flywheel"
                 }
+            }
 
             val isFirstStep = stepNum == 1
-            val isFinalStep = stepNum == businesses.size
+            val isFinalStep = stepNum == orderedBusinesses.size
 
-            val role = when {
-                isFirstStep -> "Frontline Revenue Engine & Demand Validation"
-                isFinalStep -> "High-Margin Terminal Brand Equity & Customer Loyalty"
-                else -> "Operational Backbone, Sorting & Value Multiplication"
+            val role = if (isOppositeModel) {
+                when {
+                    isFirstStep -> "Anchor Physical Asset, Infrastructure & Unit Cost Moat"
+                    isFinalStep -> "Downstream Customer Demand Scale & Retail Value Capture"
+                    else -> "Operational Processing, Quality Grading & Wholesale Off-take"
+                }
+            } else {
+                when {
+                    isFirstStep -> "Frontline Revenue Engine & Direct Demand Validation"
+                    isFinalStep -> "Terminal Capital Asset & Compounding Infrastructure"
+                    else -> "Operational Backbone, Sorting & Value Multiplication"
+                }
             }
 
-            val category = when (stepNum % 3) {
-                1 -> "Upstream Sourcing / Aggregation Node"
-                2 -> "Midstream Processing & Logistics Backbone"
-                else -> "Downstream Customer & Retail Channel"
+            val category = if (isOppositeModel) {
+                when (stepNum % 3) {
+                    1 -> "Core Infrastructure & Storage Asset"
+                    2 -> "Midstream Aggregation & Processing"
+                    else -> "Downstream Commercial & Retail Off-take"
+                }
+            } else {
+                when (stepNum % 3) {
+                    1 -> "Frontline Retail / Direct Demand Node"
+                    2 -> "Midstream Sourcing & Value Addition"
+                    else -> "Backbone Storage & Logistics Infrastructure"
+                }
             }
 
-            val capAllocation = when (stepNum) {
-                1 -> "40% of $capLabel (Demand generation, initial inventory & liquid reserve)"
-                2 -> "35% of $capLabel (Processing tools, storage & shadow logistics)"
-                else -> "25% of $capLabel (Channel distribution, marketing & credit cushion)"
+            val capAllocation = if (isOppositeModel) {
+                when (stepNum) {
+                    1 -> "50% of $capLabel (Asset acquisition, processing machinery & setup)"
+                    2 -> "30% of $capLabel (Bulk aggregation, grading line & inventory)"
+                    else -> "20% of $capLabel (Distribution channels, marketing & retail outreach)"
+                }
+            } else {
+                when (stepNum) {
+                    1 -> "40% of $capLabel (Demand generation, initial inventory & liquid reserve)"
+                    2 -> "35% of $capLabel (Processing tools, storage & shadow logistics)"
+                    else -> "25% of $capLabel (Channel distribution, marketing & credit cushion)"
+                }
             }
 
-            val kpi = when (stepNum) {
-                1 -> "Cash Flow Positive within 60 Days; Repeat Buyer Rate > 35%"
-                2 -> "Operating Waste < 1.8%; Turnaround Cycle < 48 Hours"
-                else -> "Net Profit Margin > 22%; Customer Acquisition Payback < 25 Days"
+            val kpi = if (isOppositeModel) {
+                when (stepNum) {
+                    1 -> "Asset Commissioned on Schedule; Baseline Facility Utilization > 60%"
+                    2 -> "Processing Loss < 1.2%; Bulk Wholesale Gross Margin > 24%"
+                    else -> "Terminal Retail Brand EBITDA > 28%; Repeat Customer Rate > 45%"
+                }
+            } else {
+                when (stepNum) {
+                    1 -> "Cash Flow Positive within 60 Days; Repeat Buyer Rate > 35%"
+                    2 -> "Operating Waste < 1.8%; Turnaround Cycle < 48 Hours"
+                    else -> "Net Profit Margin > 22%; Customer Acquisition Payback < 25 Days"
+                }
             }
 
-            val whyWork = listOf(
-                "Directly addresses unmet demand in $ctxLabel by eliminating layers of unnecessary brokers and middlemen.",
-                "Executes the $assignedTerm methodology to minimize fixed overhead, validating unit economics with real paying customers before expansion.",
-                "Designed around the behavioral habits of $demography ${if (gender.isNotBlank()) "focusing on $gender segments" else ""}, creating organic word-of-mouth stickiness.",
-                "Creates proprietary transaction and customer data that compounds every month, enabling automated re-ordering and predictive inventory stocking."
-            )
+            val whyWork = if (isOppositeModel) {
+                listOf(
+                    "Cost Moat: Owning physical processing/storage infrastructure upfront locks in unit costs 18–25% below asset-light competitors.",
+                    "Supply Magnet: Farmers, growers, and suppliers prioritize selling to your facility due to instant unloading and zero post-harvest spoilage.",
+                    "B2B Pricing Power: High capacity and standardized output allow winning high-volume institutional contracts immediately.",
+                    "Capital Utilization: Once the core asset is operational, marginal processing cost per extra kilogram approaches near zero."
+                )
+            } else {
+                listOf(
+                    "Directly addresses unmet demand in $ctxLabel by eliminating layers of unnecessary brokers and middlemen.",
+                    "Executes the $assignedTerm methodology to minimize fixed overhead, validating unit economics with real paying customers before expansion.",
+                    "Designed around the behavioral habits of $demography ${if (gender.isNotBlank()) "focusing on $gender segments" else ""}, creating organic word-of-mouth stickiness.",
+                    "Creates proprietary transaction and customer data that compounds every month, enabling automated re-ordering and predictive inventory stocking."
+                )
+            }
 
-            val whyNotWork = listOf(
-                "Working Capital Freeze: Receivables trapped in credit terms with commercial distributors, delaying supplier payouts.",
-                "Seasonal Supply Shock: Weather disruptions or localized commodity price spikes eroding gross margins.",
-                "Incumbent Price Attacks: Traditional brokers temporarily undercutting prices to force the new venture out of the local market.",
-                "Operational Execution Drift: Expanding into downstream packaging before mastering quality grading and inventory shrinkage."
-            )
+            val whyNotWork = if (isOppositeModel) {
+                listOf(
+                    "Fixed Overhead Drag: High facility maintenance and depreciation ongoing while customer demand is still ramping.",
+                    "Working Capital Lockup: Heavy capital committed to fixed assets leaves limited liquidity for large procurement cycles.",
+                    "Capacity Underutilization Risk: Running the facility under 50% capacity during early months incurs cash burn.",
+                    "Channel Bottleneck: If downstream distribution is slow, inventory piles up inside the facility, increasing holding cost."
+                )
+            } else {
+                listOf(
+                    "Working Capital Freeze: Receivables trapped in credit terms with commercial distributors, delaying supplier payouts.",
+                    "Seasonal Supply Shock: Weather disruptions or localized commodity price spikes eroding gross margins.",
+                    "Incumbent Price Attacks: Traditional brokers temporarily undercutting prices to force the new venture out of the local market.",
+                    "Operational Execution Drift: Expanding into downstream packaging before mastering quality grading and inventory shrinkage."
+                )
+            }
 
-            val rootCause = "Root Cause Analysis: Ventures in $ctxLabel typically collapse not from lack of demand, but from 'Structural Working Capital Asphyxiation' and lack of backstage supply control. To permanently remove this problem: enforce strict 50-70% prepayment or collateralized escrow on commercial orders, build a dedicated Shadow supplier network that offers growers faster payments than traditional brokers, and establish locked forward contracts 45 days prior to harvest."
+            val rootCause = if (isOppositeModel) {
+                "Root Cause (Opposite Model): Capital-first asset ventures stumble when facility ramp-up lags behind fixed overhead. To eliminate this issue: pre-lease 40% of facility capacity to third-party commercial traders on 12-month fixed agreements. This guarantees baseline operational break-even while your internal product volume scales."
+            } else {
+                "Root Cause Analysis: Ventures in $ctxLabel typically collapse not from lack of demand, but from 'Structural Working Capital Asphyxiation' and lack of backstage supply control. To permanently remove this problem: enforce strict 50-70% prepayment or collateralized escrow on commercial orders, build a dedicated Shadow supplier network that offers growers faster payments than traditional brokers, and establish locked forward contracts 45 days prior to harvest."
+            }
 
-            val mitigationSteps = listOf(
-                "Phase 1 (Days 1–30): Implement Zero-Credit Discipline—mandate upfront deposits on bulk orders; negotiate 15-day supplier credit terms backed by guaranteed purchase minimums.",
-                "Phase 2 (Days 31–90): Build the Shadow Supplier Hub—onboard at least 5 primary production partners with transparent digital quality grading and 48-hour wire settlements.",
-                "Phase 3 (Days 91–180): Lock in the Compounding Flywheel—reinvest 50% of monthly operating surplus into value-added processing and direct customer delivery to widen the cost advantage.",
-                "Permanent Operational Guardrail: Maintain a mandatory 90-day cash operating buffer held strictly outside the daily working capital pool."
-            )
+            val mitigationSteps = if (isOppositeModel) {
+                listOf(
+                    "Phase 1 (Days 1–45): Commission Core Asset—lock in 2 anchor institutional tenants to guarantee 50% baseline utilization before public launch.",
+                    "Phase 2 (Days 46–100): Launch Sourcing Syndicate—channel direct farmer-gate produce through the sorting/storage line at 20% lower processing cost.",
+                    "Phase 3 (Days 101–180): Activate Scale Distribution—roll out branded and B2B off-take contracts, monetizing the cost advantage into dominant market share.",
+                    "Permanent Guardrail: Never let internal + leased capacity utilization drop below 65% for two consecutive months."
+                )
+            } else {
+                listOf(
+                    "Phase 1 (Days 1–30): Implement Zero-Credit Discipline—mandate upfront deposits on bulk orders; negotiate 15-day supplier credit terms backed by guaranteed purchase minimums.",
+                    "Phase 2 (Days 31–90): Build the Shadow Supplier Hub—onboard at least 5 primary production partners with transparent digital quality grading and 48-hour wire settlements.",
+                    "Phase 3 (Days 91–180): Lock in the Compounding Flywheel—reinvest 50% of monthly operating surplus into value-added processing and direct customer delivery to widen the cost advantage.",
+                    "Permanent Operational Guardrail: Maintain a mandatory 90-day cash operating buffer held strictly outside the daily working capital pool."
+                )
+            }
+
+            val sequenceRationale = if (isOppositeModel) {
+                if (isFirstStep) {
+                    "Opposite Archetype: Capital & Asset deployed first. Establishes the physical capacity and processing moat upfront so subsequent customer demand is met with unmatched cost leadership."
+                } else {
+                    "Sequential Off-take: Once the asset foundation is secure, downstream channels are connected to absorb facility throughput without broker margin leaks."
+                }
+            } else {
+                if (isFirstStep) {
+                    "Original Archetype: Must launch first to generate immediate customer liquidity and validate willingness to pay before committing capital to backend assets."
+                } else {
+                    "Sequential Expansion: Deployed once Phase ${stepNum - 1} proves positive cash flow, funding subsequent capability and asset building organically."
+                }
+            }
 
             steps.add(
                 PathwayStep(
@@ -348,11 +472,7 @@ Generate the complete strategic blueprint with deep, practical, non-generic advi
                     category = category,
                     strategicRole = role,
                     primaryTerm = assignedTerm,
-                    sequenceRationale = if (isFirstStep) {
-                        "Must launch first to generate immediate liquidity and prove customer willingness to pay before committing capital to backend assets."
-                    } else {
-                        "Deployed sequentially once Phase ${stepNum - 1} reaches steady-state cash breakeven, absorbing output without external debt."
-                    },
+                    sequenceRationale = sequenceRationale,
                     whyItWillWork = whyWork,
                     whyItMightNotWork = whyNotWork,
                     rootCauseAndWhyToRemoveProblem = rootCause,
@@ -372,21 +492,43 @@ Generate the complete strategic blueprint with deep, practical, non-generic advi
         )
 
         val flywheel = FlywheelLoop(
-            stages = listOf(
-                "Acquire Target Customers in $ctxLabel ($demography)",
-                "Generate Predictable Daily Cash Flow & Transaction Volume",
-                "Compound Aggregate Order Volume to Secure Direct Bulk Farm/Factory Pricing",
-                "Reduce Unit Procurement Costs by 15-25% Below Fragmented Competitors",
-                "Reinvest Margin Surplus into Better Customer Pricing & Proprietary Processing Assets",
-                "Expand Market Dominance Attracting More High-Value Customers"
-            ),
-            compoundingNarrative = "Each customer won increases aggregate procurement volume across the group. As procurement scale grows, unit costs fall, funding superior quality guarantees and lower prices, which in turn drives the next cycle of organic acquisition without escalating marketing expenses."
+            stages = if (isOppositeModel) {
+                listOf(
+                    "Deploy Capital into Anchor Storage & Processing Infrastructure",
+                    "Achieve Low-Cost Processing Moat (20% Below Fragmented Competitors)",
+                    "Attract Large Institutional & Wholesale Off-take Volumes",
+                    "Max Out Capacity Utilization to 85%+, Lowering Unit Cost Further",
+                    "Launch Proprietary Downstream Retail Channels with High Margin",
+                    "Reinvest Retained Profits into Regional Asset Expansion"
+                )
+            } else {
+                listOf(
+                    "Acquire Target Customers in $ctxLabel ($demography)",
+                    "Generate Predictable Daily Cash Flow & Transaction Volume",
+                    "Compound Aggregate Order Volume to Secure Direct Bulk Farm/Factory Pricing",
+                    "Reduce Unit Procurement Costs by 15-25% Below Fragmented Competitors",
+                    "Reinvest Margin Surplus into Better Customer Pricing & Proprietary Processing Assets",
+                    "Expand Market Dominance Attracting More High-Value Customers"
+                )
+            },
+            compoundingNarrative = if (isOppositeModel) {
+                "In the Opposite Model, the flywheel starts from the asset base: Infrastructure creates low unit processing cost, which attracts high off-take volume, which maximizes capacity utilization, driving per-unit costs even lower and generating substantial profits to acquire adjacent infrastructure."
+            } else {
+                "In the Original Model, each customer won increases aggregate procurement volume across the group. As procurement scale grows, unit costs fall, funding superior quality guarantees and lower prices, which in turn drives the next cycle of organic acquisition without escalating marketing expenses."
+            }
         )
 
-        val summary = "An actionable, 5-layer business pathway architected for $capLabel in $ctxLabel. Governed by the $formula framework to systematically de-risk execution, secure backstage operational advantages, and build an enduring, compounding business group."
+        val archetypeTag = when {
+            isOppositeModel -> "Opposite Inverted Model (Asset & Foundation First)"
+            isShadowModel -> "Shadow Architecture Model (Backstage Moat)"
+            isHybridModel -> "Hybrid Dual-Track Model (Concurrent Cash & Asset Build)"
+            else -> "Original Model (Customer & Demand First)"
+        }
+
+        val summary = "An actionable, 5-layer business pathway architected under the $archetypeTag for $capLabel in $ctxLabel. Governed by the $formula framework to systematically de-risk execution, secure operational advantages, and build an enduring, compounding business group."
 
         return FrameworkBlueprint(
-            title = "${businesses.firstOrNull() ?: "Enterprise"} Strategic Pathway & Framework",
+            title = "${orderedBusinesses.firstOrNull() ?: "Enterprise"} Strategic Pathway ($archetypeTag)",
             strategyFormula = formula,
             businessesInput = businesses,
             startingCapital = capital,
@@ -399,6 +541,7 @@ Generate the complete strategic blueprint with deep, practical, non-generic advi
             flywheel = flywheel,
             complementaryBusinesses = suggestion.suggestedComplementaryBusinesses,
             suggestedTerms = suggestion.termRefinements,
+            decisionChecklist = suggestion.decisionChecklistAnswers,
             executiveSummary = summary,
             createdAt = System.currentTimeMillis()
         )

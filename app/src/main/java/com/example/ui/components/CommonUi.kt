@@ -29,22 +29,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.FrameworkLayer
-import com.example.ui.theme.AmberGold
-import com.example.ui.theme.CyanAccent
-import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.PurpleFlywheel
-import com.example.ui.theme.Slate400
-import com.example.ui.theme.Slate700
-import com.example.ui.theme.Slate850
+import com.example.ui.theme.GoldCream
+import com.example.ui.theme.GoldWarm
+import com.example.ui.theme.TealBorder
+import com.example.ui.theme.TealCardSurface
+import com.example.ui.theme.TealLightAccent
+import com.example.ui.theme.TealPrimary
+import com.example.ui.theme.TextMuted
+import com.example.ui.theme.TextPrimary
 
 @Composable
 fun LayerColor(layer: FrameworkLayer): Color {
     return when (layer) {
-        FrameworkLayer.ARCHETYPE -> AmberGold
-        FrameworkLayer.STARTING_POINT -> EmeraldSuccess
-        FrameworkLayer.EXPANSION_DIRECTION -> CyanAccent
-        FrameworkLayer.OPERATING_DESIGN -> Color(0xFF38BDF8)
-        FrameworkLayer.COMPOUNDING_ENGINE -> PurpleFlywheel
+        FrameworkLayer.ARCHETYPE -> GoldWarm               // #E6BB3F
+        FrameworkLayer.STARTING_POINT -> TealPrimary       // #318EA7
+        FrameworkLayer.EXPANSION_DIRECTION -> GoldCream    // #F2DB98
+        FrameworkLayer.OPERATING_DESIGN -> TealLightAccent
+        FrameworkLayer.COMPOUNDING_ENGINE -> GoldWarm      // #E6BB3F
     }
 }
 
@@ -59,53 +60,53 @@ fun ArchetypeChip(
     modifier: Modifier = Modifier
 ) {
     val chipColor = LayerColor(layer)
-    val bgColor = if (isSelected) chipColor.copy(alpha = 0.22f) else Slate850
-    val borderColor = if (isSelected) chipColor else Slate700
+    val bgColor = if (isSelected) chipColor.copy(alpha = 0.20f) else TealCardSurface
+    val borderColor = if (isSelected) chipColor else TealBorder.copy(alpha = 0.6f)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .testTag("archetype_chip_${termName.lowercase()}")
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(bgColor)
             .border(
                 width = if (isSelected) 1.5.dp else 1.dp,
                 color = borderColor,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(10.dp)
             )
             .clickable(onClick = onToggle)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 7.dp)
     ) {
         if (isSelected) {
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = "Selected",
                 tint = chipColor,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(15.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
         } else if (isTopArchetype) {
             Box(
                 modifier = Modifier
-                    .size(8.dp)
+                    .size(7.dp)
                     .clip(CircleShape)
-                    .background(AmberGold)
+                    .background(GoldWarm)
             )
             Spacer(modifier = Modifier.width(6.dp))
         } else if (isExecutiveCore) {
             Icon(
                 imageVector = Icons.Default.Star,
                 contentDescription = "Executive Core",
-                tint = AmberGold.copy(alpha = 0.85f),
-                modifier = Modifier.size(13.dp)
+                tint = GoldWarm.copy(alpha = 0.85f),
+                modifier = Modifier.size(12.dp)
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(5.dp))
         }
 
         Text(
             text = termName,
-            color = if (isSelected) chipColor else MaterialTheme.colorScheme.onSurface,
-            fontSize = 13.sp,
+            color = if (isSelected) chipColor else TextPrimary,
+            fontSize = 12.5.sp,
             fontWeight = if (isSelected || isTopArchetype || isExecutiveCore) FontWeight.SemiBold else FontWeight.Normal
         )
     }
@@ -116,33 +117,33 @@ fun ParameterPill(
     label: String,
     value: String,
     icon: ImageVector,
-    accentColor: Color = CyanAccent,
+    accentColor: Color = TealPrimary,
     modifier: Modifier = Modifier
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Slate850)
-            .border(1.dp, Slate700.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
+            .background(TealCardSurface)
+            .border(1.dp, TealBorder.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
             .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
             tint = accentColor,
-            modifier = Modifier.size(14.dp)
+            modifier = Modifier.size(13.dp)
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = "$label: ",
-            color = Slate400,
+            color = TextMuted,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium
         )
         Text(
             text = value,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = TextPrimary,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -167,13 +168,13 @@ fun SectionHeader(
                 modifier = Modifier
                     .size(28.dp)
                     .clip(CircleShape)
-                    .background(AmberGold.copy(alpha = 0.15f))
+                    .background(GoldWarm.copy(alpha = 0.15f))
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = AmberGold,
-                    modifier = Modifier.size(16.dp)
+                    tint = GoldWarm,
+                    modifier = Modifier.size(15.dp)
                 )
             }
             Spacer(modifier = Modifier.width(10.dp))
@@ -185,13 +186,13 @@ fun SectionHeader(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = TextPrimary
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Slate400
+                        color = TextMuted
                     )
                 }
             }
@@ -201,12 +202,13 @@ fun SectionHeader(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(AmberGold.copy(alpha = 0.2f))
+                    .background(GoldWarm.copy(alpha = 0.18f))
+                    .border(1.dp, GoldWarm.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
                     .padding(horizontal = 8.dp, vertical = 3.dp)
             ) {
                 Text(
                     text = badgeText,
-                    color = AmberGold,
+                    color = GoldWarm,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )

@@ -4,12 +4,14 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.ai.FrameworkSuggestionResult
+import com.example.data.ai.RiskSynthesizer
 import com.example.data.ai.StrategicSynthesizer
 import com.example.data.local.AppDatabase
 import com.example.data.local.BlueprintEntity
 import com.example.data.repository.PathwayRepository
 import com.example.model.FrameworkBlueprint
 import com.example.model.FrameworkLayer
+import com.example.model.RiskMitigationRoadmap
 import com.example.model.StrategyVocabulary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,9 +22,10 @@ import kotlinx.coroutines.launch
 
 enum class AppNavTab(val label: String) {
     BUILDER("Builder"),
+    RISK_ROADMAP("Risk Roadmap"),
     BLUEPRINT("Pathway & Framework"),
-    SAVED("Saved Blueprints"),
-    GLOSSARY("Archetypes & Terms")
+    SAVED("Saved"),
+    GLOSSARY("Vocabulary")
 }
 
 data class PresetIdea(
@@ -73,6 +76,11 @@ class StratFlowViewModel(application: Application) : AndroidViewModel(applicatio
         setOf("Original", "Customer-first", "Hybrid", "Shadow", "Flywheel")
     )
     val selectedTerms: StateFlow<Set<String>> = _selectedTerms.asStateFlow()
+
+    private val _selectedArchetypeLens = MutableStateFlow("Original")
+    val selectedArchetypeLens: StateFlow<String> = _selectedArchetypeLens.asStateFlow()
+
+    val archetypeLenses = listOf("Original", "Opposite", "Hybrid", "Shadow")
 
     private val _currentBlueprint = MutableStateFlow<FrameworkBlueprint?>(null)
     val currentBlueprint: StateFlow<FrameworkBlueprint?> = _currentBlueprint.asStateFlow()
@@ -229,7 +237,43 @@ class StratFlowViewModel(application: Application) : AndroidViewModel(applicatio
         _userMessage.value = "Added '$bizName' to your businesses list!"
     }
 
-    fun generatePathwayAndFramework() {
+    fun setArchetypeLens(newLens: String, triggerRegeneration: Boolean = true) {
+        _selectedArchetypeLens.value = newLens
+        val currentTerms = _selectedTerms.value.toMutableSet()
+        // Remove existing top archetypes
+        currentTerms.removeAll(setOf("Original", "Opposite", "Hybrid", "Shadow"))
+        currentTerms.add(newLens)
+
+        if (newLens == "Opposite") {
+            currentTerms.remove("Customer-first")
+            currentTerms.add("Asset-first")
+            if (!currentTerms.contains("Vertical")) currentTerms.add("Vertical")
+            if (!currentTerms.contains("Flywheel")) currentTerms.add("Flywheel")
+        } else if (newLens == "Original") {
+            currentTerms.remove("Asset-first")
+            currentTerms.remove("Capital-first")
+            currentTerms.add("Customer-first")
+        } else if (newLens == "Hybrid") {
+            currentTerms.add("Customer-first")
+            currentTerms.add("Modular")
+        } else if (newLens == "Shadow") {
+            currentTerms.add("Integrated")
+            currentTerms.add("Vertical")
+        }
+        _selectedTerms.value = currentTerms
+
+        if (triggerRegeneration && _currentBlueprint.value != null) {
+            generatePathwayAndFramework(overrideTerms = currentTerms.toList())
+            _userMessage.value = "Framework transformed to $newLens Perspective!"
+        }
+    }
+
+    fun invertToOppositeOrOriginal() {
+        val next = if (_selectedArchetypeLens.value == "Opposite") "Original" else "Opposite"
+        setArchetypeLens(next, triggerRegeneration = true)
+    }
+
+    fun generatePathwayAndFramework(overrideTerms: List<String>? = null) {
         viewModelScope.launch {
             val bizList = parseBusinesses(_businessesText.value)
             if (bizList.isEmpty()) {
@@ -239,17 +283,18 @@ class StratFlowViewModel(application: Application) : AndroidViewModel(applicatio
 
             _isGenerating.value = true
             try {
+                val termsToUse = overrideTerms ?: _selectedTerms.value.toList()
                 val blueprint = StrategicSynthesizer.generateBlueprint(
                     businesses = bizList,
                     capital = _startingCapital.value,
                     context = _marketContext.value,
                     demography = _targetDemography.value,
                     gender = _targetGender.value,
-                    selectedTerms = _selectedTerms.value.toList()
+                    selectedTerms = termsToUse
                 )
                 _currentBlueprint.value = blueprint
                 _navTab.value = AppNavTab.BLUEPRINT
-                _userMessage.value = "Strategic pathway & framework successfully architected!"
+                _userMessage.value = "Strategic pathway successfully architected!"
             } catch (e: Exception) {
                 _userMessage.value = "Error generating framework: ${e.message}"
             } finally {
@@ -299,6 +344,70 @@ class StratFlowViewModel(application: Application) : AndroidViewModel(applicatio
                 _userMessage.value = "Blueprint removed."
             } catch (e: Exception) {
                 _userMessage.value = "Error deleting blueprint: ${e.message}"
+            }
+        }
+    }
+
+    // ==========================================
+    // RISK MITIGATION ROADMAP (GEMINI API)
+    // ==========================================
+
+    private val _riskProjectIdea = MutableStateFlow("Direct-to-Consumer Organic Cold-Pressed Oil & Kitchen Staples")
+    val riskProjectIdea: StateFlow<String> = _riskProjectIdea.asStateFlow()
+
+    private val _riskCapital = MutableStateFlow("৳25 Lakh")
+    val riskCapital: StateFlow<String> = _riskCapital.asStateFlow()
+
+    private val _riskArchetype = MutableStateFlow("Original (Customer-First)")
+    val riskArchetype: StateFlow<String> = _riskArchetype.asStateFlow()
+
+    private val _currentRiskRoadmap = MutableStateFlow<RiskMitigationRoadmap?>(null)
+    val currentRiskRoadmap: StateFlow<RiskMitigationRoadmap?> = _currentRiskRoadmap.asStateFlow()
+
+    private val _isGeneratingRiskRoadmap = MutableStateFlow(false)
+    val isGeneratingRiskRoadmap: StateFlow<Boolean> = _isGeneratingRiskRoadmap.asStateFlow()
+
+    fun onRiskProjectIdeaChanged(text: String) { _riskProjectIdea.value = text }
+    fun onRiskCapitalChanged(text: String) { _riskCapital.value = text }
+    fun onRiskArchetypeChanged(archetype: String) { _riskArchetype.value = archetype }
+
+    fun loadCurrentBuilderIntoRiskRoadmap() {
+        val bizList = parseBusinesses(_businessesText.value)
+        if (bizList.isNotEmpty()) {
+            _riskProjectIdea.value = bizList.joinToString(" + ")
+        }
+        _riskCapital.value = _startingCapital.value
+        _riskArchetype.value = when (_selectedArchetypeLens.value) {
+            "Opposite" -> "Opposite (Asset-First Inversion)"
+            "Hybrid" -> "Hybrid (Dual-Track)"
+            "Shadow" -> "Shadow (Backstage Moat)"
+            else -> "Original (Customer-First)"
+        }
+        _navTab.value = AppNavTab.RISK_ROADMAP
+        generateRiskRoadmap()
+    }
+
+    fun generateRiskRoadmap() {
+        viewModelScope.launch {
+            if (_riskProjectIdea.value.isBlank()) {
+                _userMessage.value = "Please enter a project idea!"
+                return@launch
+            }
+
+            _isGeneratingRiskRoadmap.value = true
+            try {
+                val roadmap = RiskSynthesizer.generateRiskRoadmap(
+                    projectIdea = _riskProjectIdea.value.trim(),
+                    capital = _riskCapital.value.trim(),
+                    archetype = _riskArchetype.value
+                )
+                _currentRiskRoadmap.value = roadmap
+                val source = if (roadmap.generatedWithAi) "Gemini API" else "Executive Risk Engine"
+                _userMessage.value = "Risk Mitigation Roadmap generated ($source)!"
+            } catch (e: Exception) {
+                _userMessage.value = "Failed to generate roadmap: ${e.message}"
+            } finally {
+                _isGeneratingRiskRoadmap.value = false
             }
         }
     }

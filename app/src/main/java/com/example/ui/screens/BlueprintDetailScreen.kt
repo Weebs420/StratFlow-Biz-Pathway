@@ -39,21 +39,30 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -86,14 +95,16 @@ import com.example.ui.theme.Slate850
 import com.example.ui.theme.Slate900
 import com.example.ui.theme.Slate950
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun BlueprintDetailScreen(
     viewModel: StratFlowViewModel,
     modifier: Modifier = Modifier
 ) {
     val currentBlueprint by viewModel.currentBlueprint.collectAsStateWithLifecycle()
+    val selectedLens by viewModel.selectedArchetypeLens.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var lensMenuExpanded by remember { mutableStateOf(false) }
 
     if (currentBlueprint == null) {
         Box(
@@ -202,6 +213,137 @@ fun BlueprintDetailScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // STRATEGIC LENS TRANSFORMATION & INVERSION TOOLBAR
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Slate850),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.2.dp,
+                        color = if (selectedLens == "Opposite") CyanAccent else AmberGold.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = null,
+                                tint = if (selectedLens == "Opposite") CyanAccent else AmberGold,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "Current Perspective Lens:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (selectedLens == "Opposite") CyanAccent else AmberGold
+                                )
+                                Text(
+                                    text = if (selectedLens == "Opposite") "Opposite Inverted Model (Asset-first)" else "$selectedLens Model Active",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = { viewModel.invertToOppositeOrOriginal() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selectedLens == "Opposite") CyanAccent else AmberGold,
+                                contentColor = Slate950
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier
+                                .height(36.dp)
+                                .testTag("button_invert_pathway_screen")
+                        ) {
+                            Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (selectedLens == "Opposite") "⇄ Invert to Original" else "⇄ Invert to Opposite",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Lens Dropdown Menu
+                    ExposedDropdownMenuBox(
+                        expanded = lensMenuExpanded,
+                        onExpandedChange = { lensMenuExpanded = it },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = "Select Framework Lens: $selectedLens Archetype",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = lensMenuExpanded) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = if (selectedLens == "Opposite") CyanAccent else AmberGold,
+                                unfocusedBorderColor = Slate700,
+                                focusedContainerColor = Slate900,
+                                unfocusedContainerColor = Slate900
+                            ),
+                            modifier = Modifier
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+                                .fillMaxWidth()
+                                .testTag("dropdown_lens_blueprint_screen"),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = lensMenuExpanded,
+                            onDismissRequest = { lensMenuExpanded = false },
+                            modifier = Modifier.background(Slate900)
+                        ) {
+                            listOf(
+                                Triple("Original", "Original Archetype (Customer-First)", "Sell first, prove demand, build assets later (Customer → Demand → Capability → Asset)."),
+                                Triple("Opposite", "Opposite Archetype (Asset-First Inversion)", "Invert sequence: Build foundation & processing assets first, scale demand with cost leadership."),
+                                Triple("Hybrid", "Hybrid Archetype (Dual-Track)", "Run customer cash flow generation concurrently funding asset development."),
+                                Triple("Shadow", "Shadow Archetype (Backstage Moat)", "Frontline business visible; hidden procurement/logistics creates the core margin moat.")
+                            ).forEach { (key, label, desc) ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                            Text(
+                                                text = label,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (selectedLens == key) AmberGold else MaterialTheme.colorScheme.onSurface,
+                                                fontSize = 13.sp
+                                            )
+                                            Text(
+                                                text = desc,
+                                                fontSize = 11.sp,
+                                                color = Slate400,
+                                                lineHeight = 15.sp
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        viewModel.setArchetypeLens(key, triggerRegeneration = true)
+                                        lensMenuExpanded = false
+                                    },
+                                    modifier = Modifier.testTag("dropdown_lens_item_$key")
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // STRATEGY FORMULA BANNER
@@ -286,6 +428,47 @@ fun BlueprintDetailScreen(
                         }
                         if (bp.targetGender.isNotBlank()) {
                             ParameterPill(label = "Gender", value = bp.targetGender, icon = Icons.Default.Wc, accentColor = EmeraldSuccess)
+                        }
+                    }
+                }
+            }
+
+            if (bp.decisionChecklist.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Slate900),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, AmberGold.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Speed, contentDescription = null, tint = AmberGold, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "5-Point Strategic Decision Evaluation",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = AmberGold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        bp.decisionChecklist.forEach { item ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 3.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text("• ", color = AmberGold, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = item,
+                                    fontSize = 12.sp,
+                                    color = Slate300,
+                                    lineHeight = 18.sp
+                                )
+                            }
                         }
                     }
                 }

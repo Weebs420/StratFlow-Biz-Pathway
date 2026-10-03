@@ -59,6 +59,7 @@ data class FrameworkBlueprint(
     val flywheel: FlywheelLoop,
     val complementaryBusinesses: List<ComplementaryBusinessSuggestion>,
     val suggestedTerms: List<SuggestedTermRefinement>,
+    val decisionChecklist: List<String> = emptyList(),
     val executiveSummary: String,
     val createdAt: Long = System.currentTimeMillis()
 )

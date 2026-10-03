@@ -120,7 +120,7 @@ fun GlossaryScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "The 3-Layer Business Architecture Glossary",
+                        text = "The 5-Layer Business Architecture Vocabulary",
                         style = MaterialTheme.typography.bodySmall,
                         color = Slate400
                     )
@@ -196,7 +196,7 @@ fun GlossaryScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Layer Tabs
-            val layers = FrameworkLayer.values().toList()
+            val layers = FrameworkLayer.entries
             ScrollableTabRow(
                 selectedTabIndex = if (selectedLayerTab == null) 0 else layers.indexOf(selectedLayerTab) + 1,
                 containerColor = Slate850,

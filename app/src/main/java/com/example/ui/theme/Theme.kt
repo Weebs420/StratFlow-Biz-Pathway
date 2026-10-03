@@ -14,35 +14,35 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryGold,
-    onPrimary = OnPrimaryDark,
-    primaryContainer = Slate800,
-    onPrimaryContainer = AmberGoldLight,
-    secondary = SecondaryCyan,
-    onSecondary = Slate950,
-    secondaryContainer = Slate850,
-    onSecondaryContainer = CyanAccent,
-    tertiary = TertiaryPurple,
-    onTertiary = Color.White,
-    background = Slate950,
-    onBackground = Slate100,
-    surface = Slate900,
-    onSurface = Slate100,
-    surfaceVariant = Slate800,
-    onSurfaceVariant = Slate300,
-    outline = Slate700,
-    outlineVariant = Slate800,
+    primary = GoldWarm,               // #E6BB3F
+    onPrimary = TealDarkBg,           // #112A31
+    primaryContainer = TealSurfaceHigher,
+    onPrimaryContainer = GoldCream,   // #F2DB98
+    secondary = TealPrimary,          // #318EA7
+    onSecondary = Color.White,
+    secondaryContainer = TealCardSurface,
+    onSecondaryContainer = TealLightAccent,
+    tertiary = GoldCream,             // #F2DB98
+    onTertiary = TealDarkBg,
+    background = TealDarkBg,          // #112A31
+    onBackground = TextPrimary,
+    surface = TealCardSurface,        // #16353E
+    onSurface = TextPrimary,
+    surfaceVariant = TealSurfaceHigher,
+    onSurfaceVariant = TextSecondary,
+    outline = TealBorder,
+    outlineVariant = TealBorderSubtle,
     error = RoseRisk,
     onError = Color.White
 )
 
-private val LightColorScheme = darkColorScheme( // Keep executive dark theme default for strategic apps
-    primary = PrimaryGold,
-    onPrimary = OnPrimaryDark,
-    background = Slate950,
-    surface = Slate900,
-    onBackground = Slate100,
-    onSurface = Slate100
+private val LightColorScheme = darkColorScheme(
+    primary = GoldWarm,
+    onPrimary = TealDarkBg,
+    background = TealDarkBg,
+    surface = TealCardSurface,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary
 )
 
 @Composable
@@ -57,9 +57,9 @@ fun MyApplicationTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
-                window.statusBarColor = colorScheme.background.toArgb()
-                window.navigationBarColor = colorScheme.background.toArgb()
-                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = false
+                insetsController.isAppearanceLightNavigationBars = false
             }
         }
     }

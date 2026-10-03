@@ -105,6 +105,11 @@ object BlueprintJsonAdapter {
         }
         root.put("suggestedTerms", termSugArr)
 
+        // Decision checklist
+        val checklistArr = JSONArray()
+        blueprint.decisionChecklist.forEach { checklistArr.put(it) }
+        root.put("decisionChecklist", checklistArr)
+
         return root.toString()
     }
 
@@ -219,6 +224,11 @@ object BlueprintJsonAdapter {
             }
         }
 
+        val checklist = mutableListOf<String>()
+        root.optJSONArray("decisionChecklist")?.let { arr ->
+            for (i in 0 until arr.length()) checklist.add(arr.getString(i))
+        }
+
         return FrameworkBlueprint(
             id = id,
             title = title,
@@ -234,6 +244,7 @@ object BlueprintJsonAdapter {
             flywheel = flywheel,
             complementaryBusinesses = complementary,
             suggestedTerms = suggestedTerms,
+            decisionChecklist = checklist,
             executiveSummary = executiveSummary,
             createdAt = createdAt
         )
