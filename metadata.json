@@ -1,0 +1,6 @@
+{
+  "name": "StratFlow: Biz Pathway",
+  "description": "Architect strategic pathways, business model archetypes (Original, Opposite, Hybrid, Shadow, Flywheel), and actionable risk mitigation roadmaps.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
